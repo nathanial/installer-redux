@@ -7,8 +7,8 @@ apt_package :irb
 apt_package :libopenssl_ruby, "libopenssl-ruby"
 apt_package :mysql_server, "mysql-server"
 apt_package :curl
-apt_package :git
-apt_package :svn
+apt_package :git, 'git-core'
+apt_package :svn, 'subversion'
 apt_package :ruby
 apt_package :java
 apt_package :python25, "python2.5"
@@ -22,7 +22,6 @@ apt_package :python_mysqldb, "python-mysqldb"
 apt_package :expect
 apt_package :python_serial, "python-serial"
 apt_package :python_html5lib, "python-html5lib"
-apt_package :pypdf, "python-pypdf"
 apt_package :python_imaging, "python-imaging"
 apt_package :python_dev, "python-all-dev"
 
@@ -31,7 +30,7 @@ gem_package :openssl_nonblock_gem, "openssl-nonblock"
 
 package :python do
   predicate :installed? do
-    some([:python25, :python25], lambda {|p| p.installed?})
+    some([:python25, :python26], lambda {|p| lookup(p).installed?})
   end
   command :install do
     lookup(:python25).install

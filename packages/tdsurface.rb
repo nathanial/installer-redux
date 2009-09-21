@@ -11,7 +11,7 @@ package :tdsurface do
   repository :git, "git@github.com:teledrill/tdsurface.git"
 
   python_site_packages = `python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()"`.chomp
-  password = @settings[:password]
+  password = @settings[:tdsurface][:password]
   
   command :install do
     install_project_files
@@ -36,7 +36,7 @@ package :tdsurface do
     chown("root", "www-data", ["/var/log/tdsurface"])
     cp_r "#{python_site_packages}/django/contrib/admin/media", "/var/www/media"
     cp_r "#@project_directory/media", "/var/www/"
-    cp "#@support/tdsurface/tdsurface_apache.conf", '/etc/apache2/conf.d/tdsurface'
+    cp "#@support/tdsurface_apache.conf", '/etc/apache2/conf.d/tdsurface'
     chmod_R(0777, ["/var/matplotlib", "/var/log/tdsurface"])
     sh("touch /var/log/tdsurface/tdsurface.log")
     sh("chmod a+rw /var/log/tdsurface/tdsurface.log")
@@ -44,7 +44,7 @@ package :tdsurface do
 
   command :remove_database do
     system("""
-    mysql --user=root --password=#@@password -e \"
+    mysql --user=root --password=#{password} -e \"
        DROP DATABASE tdsurface;
        DROP USER 'tdsurface'@'localhost';\"
 """)
@@ -52,12 +52,12 @@ package :tdsurface do
   
   command :create_database do
     begin
-      sh("""mysql --user=root --password=#@@password -e \"
+      sh("""mysql --user=root --password=#{password} -e \"
 CREATE DATABASE tdsurface;
-CREATE USER 'tdsurface'@'localhost' IDENTIFIED BY '#@@password';
+CREATE USER 'tdsurface'@'localhost' IDENTIFIED BY '#{password}';
 GRANT ALL PRIVILEGES ON *.* TO 'tdsurface'@'localhost';\"
 """)
-      sh("expect #@support/tdsurface/expect_script.tcl")
+      sh("expect #@support/expect_script.tcl")
     rescue
       warn "could not create database or database already exists"
     end

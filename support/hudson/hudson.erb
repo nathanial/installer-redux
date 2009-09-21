@@ -1,0 +1,46 @@
+#!/bin/sh
+
+if [ "$(whoami)" != "root" ]; then
+    echo "must be sudo to run this script"
+    exit 1
+fi
+
+DESC="Hudson CI Server"
+NAME=<%= @name %>
+PIDFILE=/var/run/$NAME.pid
+export HUDSON_HOME=<%= @project_directory %>
+
+do_start() {
+    start-stop-daemon --start --background --make-pidfile --pidfile $PIDFILE --exec /usr/bin/java -- -jar $HUDSON_HOME/hudson.war
+}
+
+do_stop() {
+    start-stop-daemon --stop --pidfile $PIDFILE
+    if [ -e $PIDFILE ]
+    then rm $PIDFILE
+    fi
+}
+
+case $1 in
+    start)
+	echo -n "Starting $DESC: $NAME"
+	do_start
+	echo "."
+	;;
+    stop)
+	echo -n "Stopping $DESC : $NAME"
+	do_stop
+	echo "."
+	;;
+    restart)
+	echo -n "Restarting $DESC : $NAME"
+	do_stop
+	sleep 1
+	do_start
+	echo "."
+	;;
+    *)
+	echo "usage: $NAME {start|stop|restart}"
+	exit 1
+	;;
+esac

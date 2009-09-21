@@ -1,0 +1,20 @@
+#!/usr/bin/ruby
+require 'package'
+
+GLOBAL_SETTINGS = {
+  :package => {
+    :directory => "/var/development/"
+  },
+  :tdsurface => {
+    :password => "scimitar1"
+  }
+}
+
+if __FILE__ == $0
+  for file in Dir.glob("packages/*")
+    require file if File.exists? file and file =~ /rb$/
+  end
+  command = ARGV[0].intern
+  the_package = lookup(ARGV[1].intern)
+  the_package.method_missing(command)
+end

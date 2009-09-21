@@ -1,0 +1,23 @@
+#!/bin/sh
+case $1 in
+    start)
+	<%= @project_directory -%>/bin/linux-x86-32/activemq start
+	;;
+    stop)
+	<%= @project_directory -%>/bin/linux-x86-32/activemq stop
+	;;
+    restart)
+	<%= @project_directory -%>/bin/linux-x86-32/activemq restart
+	;;
+    force-reload)
+	<%= @project_directory -%>/bin/linux-x86-32/activemq restart
+	;;
+    status)
+	<%= @project_directory -%>/bin/linux-x86-32/activemq status
+	;;
+    *)
+	echo "no habla $@"
+	exit 1
+	;;
+esac
+exit 0

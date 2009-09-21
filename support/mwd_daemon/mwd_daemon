@@ -1,0 +1,42 @@
+#!/bin/sh
+
+DESC="MWD Daemon"
+NAME=mwd_daemon
+PIDFILE=/var/run/$NAME.pid
+
+do_start() {
+    touch /var/log/mwd-daemon
+    chmod a+rw /var/log/mwd-daemon
+    start-stop-daemon --start --background --make-pidfile --pidfile $PIDFILE --exec /usr/bin/python -- /var/django-projects/mwd_daemon/mwd_daemon.py
+}
+
+do_stop() {
+    start-stop-daemon --stop --pidfile $PIDFILE
+    if [ -e $PIDFILE ]
+    then rm $PIDFILE
+    fi
+}
+
+case $1 in 
+    start)
+	echo -n "Starting $DESC : $NAME"
+	do_start
+	echo "."
+	;;
+    stop)
+	echo -n "Stopping $DESC : $NAME"
+	do_stop
+	echo "."
+	;;
+    restart)
+	echo -n "Restarting $DESC : $NAME"
+	do_stop
+	sleep 1
+	do_start
+	echo "."
+	;;
+    *)
+	echo "usage : $NAME {start|stop|restart}"
+	exit 1
+	;;
+esac

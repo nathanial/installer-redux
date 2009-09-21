@@ -1,0 +1,21 @@
+SetEnv MPLCONFIGDIR /var/matplotlib
+
+<Location "/tdsurface/">
+	  SetHandler python-program
+	  PythonHandler django.core.handlers.modpython
+	  SetEnv DJANGO_SETTINGS_MODULE tdsurface.settings
+	  PythonDebug On
+	  PythonPath "['<%= @settings[:package][:directory] %>'] + sys.path"
+</Location>
+
+<Location "/admin/">
+	  SetHandler python-program
+	  PythonHandler django.core.handlers.modpython
+	  SetEnv DJANGO_SETTINGS_MODULE tdsurface.settings
+	  PythonDebug On
+	  PythonPath "['<%= @settings[:package][:directory] %>'] + sys.path"
+</Location>
+
+<Location "/media/">
+	  SetHandler None
+</Location>
