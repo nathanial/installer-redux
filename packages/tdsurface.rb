@@ -41,7 +41,7 @@ package :tdsurface do
     sh("touch /var/log/tdsurface/tdsurface.log")
     sh("chmod a+rw /var/log/tdsurface/tdsurface.log")
   end
-
+  
   command :remove_database do
     system("""
     mysql --user=root --password=#{password} -e \"

@@ -41,6 +41,7 @@ class Package
 
   def initialize(name, settings)
     @name = name
+    @flags = []
     @project_directory = "/var/development/#{name}"
     @support = "/home/nathan/Projects/installer-redux/support/#{name}"
     @settings = settings
@@ -85,7 +86,11 @@ class Package
     binding
   end
 
-  private 
+  private
+
+  def flag(*args)
+    args.each {|a| @flags << a}
+  end
 
   def installs_service
     @package_installs_service = true
@@ -99,14 +104,17 @@ class Package
     sh("update-rc.d #{script_name} defaults")
     sh("service #{script_name} start")
   end
-
+  
   def install_dependencies
-    @package_dependencies.each do |d|
+    @package_dependencies.each do |qd|
       lookup(d).install
     end
   end
 
   def create_directories
+    return if (@flags.include? :apt_package or 
+               @flags.include? :py_package or 
+               @flags.include? :gem_package)
     mkdir_p @project_directory
     @package_directories.each {|d| mkdir_p d}
   end
@@ -194,11 +202,12 @@ def apt_package(*args)
   end
 
   package name do
+    flag :apt_package
     command :install do
       sh("aptitude -y install #{apt_name}")
     end
     command :remove do 
-      sh("aptitude -y remove #{aptitude}")
+      sh("aptitude -y remove #{apt_name}")
     end
     predicate :installed? do
       puts "checking if #{name} is installed"
@@ -214,6 +223,7 @@ def gem_package(*args)
     gem_name = args.shift
   end
   package name do
+    flag :gem_package
     command :install do
       sh("gem install #{gem_name}")
     end
@@ -228,6 +238,7 @@ end
 
 def py_package(name, options)
   package name do
+    flag :py_package
     depends_on :python
     depends_on(*options[:dependencies])
     downloads :url => options[:url], :extract => options[:tarball], :to => @project_directory
