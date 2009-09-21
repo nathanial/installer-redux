@@ -24,6 +24,7 @@ apt_package :python_serial, "python-serial"
 apt_package :python_html5lib, "python-html5lib"
 apt_package :python_imaging, "python-imaging"
 apt_package :python_dev, "python-all-dev"
+apt_package :sysvconfig
 
 gem_package :http_client_gem, "httpclient"
 gem_package :openssl_nonblock_gem, "openssl-nonblock"

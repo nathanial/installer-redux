@@ -11,8 +11,8 @@ GLOBAL_SETTINGS = {
 }
 
 if __FILE__ == $0
-  for file in Dir.glob("packages/*")
-    require file if File.exists? file and file =~ /rb$/
+  for path in Dir.glob("packages/*")
+    require path if File.exists? path and path =~ /rb$/
   end
   command = ARGV[0].intern
   the_package = lookup(ARGV[1].intern)

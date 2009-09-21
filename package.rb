@@ -5,7 +5,6 @@ require 'httpclient'
 require 'erb'
 
 $packages = {}
-$current_package = nil
 
 def lookup(name)  
   p = $packages[name]
@@ -38,7 +37,7 @@ end
 class Package
   attr_accessor :package_commands, :package_dependencies
   attr_accessor :package_directories, :package_repository
-  attr_accessor :package_downloads
+  attr_accessor :package_downloads, :project_directory
 
   def initialize(name, settings)
     @name = name
