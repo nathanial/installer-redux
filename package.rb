@@ -54,6 +54,14 @@ class Package
     @install_script = "#@support/#{name}"
   end
 
+  def to_s
+    @name.to_s
+  end
+
+  def inspect
+    @name.to_s
+  end
+
   def method_missing(sym, *args)
     case sym
     when :install
@@ -64,6 +72,7 @@ class Package
       download_other_stuff
       process_support_files
       install_service
+      return if not @package_commands[sym]
     when :remove
       return if not installed?
       remove_directories
@@ -71,6 +80,12 @@ class Package
     when :installed?
       if not @package_commands[sym]
         return File.exists?(@project_directory)
+      end
+    when :reinstall
+      if not @package_commands[sym]
+        self.remove
+        self.install
+        return
       end
     end
     puts "calling #{sym} on #{self}"
@@ -106,7 +121,7 @@ class Package
   end
   
   def install_dependencies
-    @package_dependencies.each do |qd|
+    @package_dependencies.each do |d|
       lookup(d).install
     end
   end
@@ -150,7 +165,9 @@ class Package
   end
 
   def process_support_files
+    puts "processing directory #@support/*"
     Dir.glob("#@support/*").each do |file|
+      puts "processing #{file}"
       if File.file? file and /(\.*)(.erb$)/ =~ file
         fname = file.scan(/(.*)(.erb$)/)[0][0]
         File.open(fname,"w") do |f|
