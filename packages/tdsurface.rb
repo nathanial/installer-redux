@@ -19,7 +19,7 @@ package :tdsurface do
     create_database 
     restart_apache
   end
-
+  
   command :remove do
     sh_f("service apache2 stop")
     rm_rf '/var/www/media'

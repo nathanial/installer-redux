@@ -1,11 +1,11 @@
-spawn python "<%= @settings[:package][:directory] %>/tdsurface/manage.py" "syncdb"
+spawn python "<%= SETTINGS[:package][:directory] %>/tdsurface/manage.py" "syncdb"
 
 set timeout -1
 
 expect "(yes/no)*:" { send "yes\n" }
 expect "Username*:" { send "teledrill\n" }
 expect "E-mail*:" { send "nathan@erdosmiller.com\n" }
-expect "Password*:" { send "<%= @settings[:tdsurface][:password] %>\n" }
-expect "Password*:" { send "<%= @settings[:tdsurface][:password] %>\n" }
+expect "Password*:" { send "<%= SETTINGS[:tdsurface][:password] %>\n" }
+expect "Password*:" { send "<%= SETTINGS[:tdsurface][:password] %>\n" }
 expect eof {exit 0}
 

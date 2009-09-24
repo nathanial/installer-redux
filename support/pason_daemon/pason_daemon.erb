@@ -5,8 +5,6 @@ NAME=<%= @name %>
 PIDFILE=/var/run/$NAME.pid
 
 do_start() {
-    touch /var/log/$NAME
-    chmod a+rw /var/log/$NAME
     start-stop-daemon --start --background --make-pidfile --pidfile $PIDFILE --exec /usr/bin/python -- <%= @project_directory %>/pason.py
 }
 

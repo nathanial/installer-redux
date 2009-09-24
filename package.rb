@@ -62,6 +62,14 @@ class Package
     @name.to_s
   end
 
+  def invoke_if_exists(sym, *args)
+    if @package_commands[sym]
+      @package_commands[sym].call(*args)
+    else
+      raise "could not find command #{sym}"
+    end
+  end
+
   def method_missing(sym, *args)
     case sym
     when :install
@@ -71,12 +79,12 @@ class Package
       create_directories
       download_other_stuff
       process_support_files
+      invoke_if_exists(sym, *args)
       install_service
-      return if not @package_commands[sym]
     when :remove
       return if not installed?
       remove_directories
-      return if not @package_commands[sym]
+      invoke_if_exists(sym, *args)
     when :installed?
       if not @package_commands[sym]
         return File.exists?(@project_directory)
@@ -87,13 +95,8 @@ class Package
         self.install
         return
       end
-    end
-    puts "calling #{sym} on #{self}"
-    command = @package_commands[sym]
-    if command
-      command.call(*args)
-    else 
-      super.method_missing(sym, *args)
+    else
+      invoke_if_exists(sym, *args)
     end
   end
 

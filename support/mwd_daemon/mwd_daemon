@@ -7,7 +7,7 @@ PIDFILE=/var/run/$NAME.pid
 do_start() {
     touch /var/log/mwd-daemon
     chmod a+rw /var/log/mwd-daemon
-    start-stop-daemon --start --background --make-pidfile --pidfile $PIDFILE --exec /usr/bin/python -- /var/development/mwd_daemon/mwd_daemon.py
+    start-stop-daemon --start --background --make-pidfile --pidfile $PIDFILE --exec /usr/bin/python -- /var/teledrill/mwd_daemon/mwd_daemon.py
 }
 
 do_stop() {
