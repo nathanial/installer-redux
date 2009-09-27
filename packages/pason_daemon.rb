@@ -6,6 +6,10 @@ package :pason_daemon do
   installs_service
   depends_on :python, :git, :tdsurface, :pywits
   repository :git, "git@github.com:teledrill/pason-daemon.git"
+  description """
+the pason daemon pulls data from the pason system over wits0, 
+using either serial or ethernet connections (configurable via /etc/surface-system.conf)
+"""
   
   command :install do
     ln_s "#{lookup(:pywits).project_directory}/PyWITS", @project_directory

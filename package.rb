@@ -1,8 +1,11 @@
 #!/usr/bin/ruby
+require 'logging'
+require 'commands'
 require 'rubygems'
 require 'fileutils'
 require 'httpclient'
 require 'erb'
+include Logging
 
 $packages = {}
 
@@ -16,7 +19,7 @@ def lookup(name)
 end
 
 def sh(text)
-  puts text
+  log text
   raise "shell error with #{text}" unless system(text)
 end
 
@@ -38,10 +41,13 @@ class Package
   attr_accessor :package_commands, :package_dependencies
   attr_accessor :package_directories, :package_repository
   attr_accessor :package_downloads, :project_directory
+  attr_accessor :package_description
 
   def initialize(name, settings)
     @name = name
     @flags = []
+    @c_flags = []
+    @c_descriptions = []
     @project_directory = "/var/development/#{name}"
     @support = "/home/nathan/Projects/installer-redux/support/#{name}"
     @settings = settings
@@ -52,6 +58,7 @@ class Package
     @package_downloads = []
     @package_installs_service = false
     @install_script = "#@support/#{name}"
+    @package_description = "None"
   end
 
   def to_s
@@ -88,6 +95,8 @@ class Package
     when :installed?
       if not @package_commands[sym]
         return File.exists?(@project_directory)
+      else
+        invoke_if_exists(sym, *args)
       end
     when :reinstall
       if not @package_commands[sym]
@@ -153,7 +162,7 @@ class Package
       url = pd[:url]
       file = pd[:extract]
       dest = pd[:to]
-      puts "downloading package #{file}"
+      log "downloading package #{file}"
       open("#@project_directory/#{file}", "w") do |f|
         f.write(client.get_content(url))
       end
@@ -168,9 +177,9 @@ class Package
   end
 
   def process_support_files
-    puts "processing directory #@support/*"
+    log "processing directory #@support/*"
     Dir.glob("#@support/*").each do |file|
-      puts "processing #{file}"
+      log "processing #{file}"
       if File.file? file and /(\.*)(.erb$)/ =~ file
         fname = file.scan(/(.*)(.erb$)/)[0][0]
         File.open(fname,"w") do |f|
@@ -192,8 +201,32 @@ class Package
     @package_repository = args
   end
 
+  def c_flag(*args)
+    @c_flags << args
+  end
+
+  def pop_c_flags 
+    @c_flags.pop unless @c_flags.empty?
+  end
+  
+  def c_description(desc)
+    @c_descriptions << desc
+  end
+
+  def pop_c_description 
+    @c_descriptions.pop unless @c_descriptions.empty?
+  end
+
+  def description(desc)
+    @package_description = desc
+  end
+
   def command(name, &block)
-    @package_commands[name] = block
+    c = Command.new(&block)
+    c.name = name 
+    c.flags = pop_c_flags
+    c.description = pop_c_description
+    @package_commands[name] = c
   end
 
   def predicate(name, &block)
@@ -230,7 +263,7 @@ def apt_package(*args)
       sh("aptitude -y remove #{apt_name}")
     end
     predicate :installed? do
-      puts "checking if #{name} is installed"
+      log "checking if #{name} is installed"
       installed = $installed_deb_packages.reject {|r| not r =~ /^ii/ or not r =~ / #{apt_name} /}
       not installed.empty?
     end

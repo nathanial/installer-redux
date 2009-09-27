@@ -2,6 +2,10 @@ require 'package'
 require 'packages/general'
 
 package :tdsurface do
+  description """
+the most important package of them all; webapp the does it all;
+controls tool, gathers pason and mwd data...
+"""
   depends_on :mysql_server, :apache2, :svn, :git, :django, :expect
   depends_on :python_tz, :matplotlib, :mod_python, :python_mysqldb
   depends_on :pisa, :report_lab, :python_html5lib, :pypdf, :python_imaging
