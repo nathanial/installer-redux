@@ -1,29 +1,40 @@
-require 'Qt4'
+require 'Qt'
 require 'package'
+require 'logging'
+include Logging
 
 class PackageTable < Qt::TableWidget
   def initialize(parent = nil)
     super(parent)
-    add_column("Package")
-    add_column("Installed?")
-    row = 0
-    for name in $packages.keys
-      insertRow(row)
-      setItem(row, 0, Qt::TableWidgetItem.new(name.to_s))
-      setItem(row, 1, Qt::TableWidgetItem.new(lookup(name).installed?.to_s))
-      row += 1
-    end
+
+    populate_table
+    
     setSizePolicy(Qt::SizePolicy.new(Qt::SizePolicy::Fixed, Qt::SizePolicy::Expanding))
     setSelectionMode(Qt::AbstractItemView::SingleSelection)
     setSelectionBehavior(Qt::AbstractItemView::SelectRows)
   end
 
-  private
-  def add_column(name)
-    c = columnCount
-    insertColumn(c)
-    setHorizontalHeaderItem(c, Qt::TableWidgetItem.new(name))
+  def populate_table
+    setRowCount($packages.values.count)
+    setColumnCount(2)
+    setHorizontalHeaderItem(0, Qt::TableWidgetItem.new("Packages"))
+    setHorizontalHeaderItem(1, Qt::TableWidgetItem.new("Installed?"))
+
+    row = 0
+    for package in $packages.values
+      setItem(row, 0, Qt::TableWidgetItem.new(package.name.to_s))
+      setItem(row, 1, Qt::TableWidgetItem.new(package.installed?.to_s))
+      row += 1
+    end
   end
+
+  def updateAll
+    for r in 0..(rowCount-1)
+      name = item(r,0).text.intern
+      item(r,1).setText(lookup(name).installed?.to_s)
+    end
+  end
+
 end
 
 class LogWindow < Qt::Widget
@@ -36,12 +47,27 @@ class LogWindow < Qt::Widget
     setLayout(layout)
     adjustSize
   end
+
+  def intercept_stdout
+    $logging_callback = lambda do |t|
+      puts t
+      @log.append(t)
+      $qApp.processEvents()
+    end
+  end
+
+  def reset_stdout
+    $logging_callback = lambda do |t|
+      puts t
+      $qApp.processEvents()
+    end
+  end
 end
 
 class PackageWidget < Qt::Widget
-  slots 'installPackage()', 'removePackage()'
-  slots 'reinstallPackage()', 'other()'
-  
+  signals :packageChanged
+  attr_accessor :package
+
   def initialize
     super
     @description_label = Qt::Label.new("Description")
@@ -52,10 +78,22 @@ class PackageWidget < Qt::Widget
     @remove_button = Qt::PushButton.new("Remove")
     @reinstall_button = Qt::PushButton.new("Reinstall")
     @other_button = Qt::PushButton.new("Other...")
-    connect(@install_button, SIGNAL('clicked()'), self, SLOT('installPackage()'))
-    connect(@remove_button, SIGNAL('clicked()'), self, SLOT('removePackage()'))
-    connect(@reinstall_button, SIGNAL('clicked()'), self, SLOT('reinstallPackage()'))
-    connect(@other_button, SIGNAL('clicked()'), self, SLOT('other()'))
+    @install_button.connect(SIGNAL :clicked) do
+      run_command 'install'
+    end
+    @remove_button.connect(SIGNAL :clicked) do
+      run_command 'remove'
+    end
+    @reinstall_button.connect(SIGNAL :clicked) do
+      run_command 'reinstall'
+    end
+    @other_button.connect(SIGNAL :clicked) do
+      log "other"
+    end
+    @install_button.setEnabled(false)
+    @remove_button.setEnabled(false)
+    @reinstall_button.setEnabled(false)
+    @other_button.setEnabled(false)
 
     layout = Qt::VBoxLayout.new()
     layout.addWidget(@description_label)
@@ -75,43 +113,45 @@ class PackageWidget < Qt::Widget
   def update_package(p)
     @package = p
     @description.setText(p.package_description.strip)
+    @install_button.setEnabled(true)
+    @remove_button.setEnabled(true)
+    @reinstall_button.setEnabled(true)
+#    @other_button.setEnabled(true)
   end
 
-  def installPackage
+  def run_command(name)
     log_window = LogWindow.new
     log_window.intercept_stdout
     log_window.show
-    @package.install
-  end
-
-  def removePackage
-    log_window = LogWindow.new
-    log_window.intercept_stdout
-    log_window.show
-    @package.remove
-  end
-  
-  def reinstallPackage
-    log_window = LogWindow.new
-    log_window.intercept_stdout
-    log_window.show
-    @package.remove
-  end
-
-  def other
-    puts "other #@package"
-  end
-
+    begin 
+      eval("@package.#{name}")
+      log "finished"
+      log_window.reset_stdout
+      emit packageChanged()
+      return true
+    rescue Exception => e
+      log "error #{e}"
+      log_window.reset_stdout
+      return false
+    end
+  end 
+    
 end
 
 class MainWindow < Qt::Widget
-  slots 'updatePackage()'
   def initialize
     super    
     @package_table = PackageTable.new()
     @package_widget = PackageWidget.new()
 
-    connect(@package_table, SIGNAL('itemSelectionChanged()'), self, SLOT('updatePackage()'))
+    @package_table.connect(SIGNAL 'itemSelectionChanged()') do
+      item = @package_table.selectedItems[0]
+      package = lookup(item.text.intern)
+      @package_widget.update_package(package)
+    end
+    @package_widget.connect(SIGNAL 'packageChanged()') do 
+      @package_table.updateAll
+    end
 
     layout = Qt::HBoxLayout.new()
     layout.addWidget(@package_table, 0, Qt::AlignLeft)
@@ -121,14 +161,6 @@ class MainWindow < Qt::Widget
     adjustSize
   end
 
-  def updatePackage
-    item = @package_table.selectedItems[0]
-    if item.column == 0
-      package = lookup(item.text.intern)
-      @package_widget.update_package(package)
-    end
-  end
-    
 end
 
 GLOBAL_SETTINGS = {

@@ -38,6 +38,7 @@ def some(coll, pred)
 end
 
 class Package
+  attr_accessor :name
   attr_accessor :package_commands, :package_dependencies
   attr_accessor :package_directories, :package_repository
   attr_accessor :package_downloads, :project_directory
@@ -91,7 +92,7 @@ class Package
     when :remove
       return if not installed?
       remove_directories
-      invoke_if_exists(sym, *args)
+      invoke_if_exists(sym, *args) if @package_commands[sym]
     when :installed?
       if not @package_commands[sym]
         return File.exists?(@project_directory)
@@ -172,8 +173,13 @@ class Package
   end
 
   def remove_directories
-    rm_rf @project_directory
-    @package_directories.each {|d| rm_rf d}
+    log "removing directories for #@name"
+    log "rm -rf #@project_directory"
+    rm_r @project_directory
+    @package_directories.each do |d|
+      log "rm -rf #{d}"
+      rm_r d
+    end
   end
 
   def process_support_files

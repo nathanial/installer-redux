@@ -1,6 +1,8 @@
 
+$logging_callback = lambda {|t| puts t}
+
 module Logging
   def log(text)
-    puts text
+    $logging_callback.call(text)
   end
 end
