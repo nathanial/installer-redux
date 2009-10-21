@@ -78,38 +78,6 @@ class Package
     end
   end
 
-  def method_missing(sym, *args)
-    case sym
-    when :install
-      return if installed?
-      install_dependencies
-      download_repositories
-      create_directories
-      download_other_stuff
-      process_support_files
-      invoke_if_exists(sym, *args)
-      install_service
-    when :remove
-      return if not installed?
-      remove_directories
-      invoke_if_exists(sym, *args) if @package_commands[sym]
-    when :installed?
-      if not @package_commands[sym]
-        return File.exists?(@project_directory)
-      else
-        invoke_if_exists(sym, *args)
-      end
-    when :reinstall
-      if not @package_commands[sym]
-        self.remove
-        self.install
-        return
-      end
-    else
-      invoke_if_exists(sym, *args)
-    end
-  end
-
   def get_binding 
     binding
   end
@@ -227,8 +195,20 @@ class Package
   end
 
   def command(name, &block)
-    c = Command.new(&block)
-    c.name = name 
+    c = nil
+    case name
+    when :install
+      c = default_install_command(self, &block)
+    when :remove
+      c = default_remove_command(self, &block)
+    when :installed? 
+      c = default_installed_predicate(self, &block)
+    when :reinstall
+      c = default_reinstall_command(self, &block)
+    else
+      c = Command.new(self, &block)
+      c.name = name 
+    end
     c.flags = pop_c_flags
     c.description = pop_c_description
     @package_commands[name] = c
