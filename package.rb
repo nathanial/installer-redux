@@ -140,8 +140,7 @@ class Package
   end
 
   def create_directories
-    return if (@flags.include? :apt_package or 
-               @flags.include? :py_package or 
+    return if (@flags.include? :apt_package or
                @flags.include? :gem_package)
     mkdir_p @project_directory
     @package_directories.each {|d| mkdir_p d}

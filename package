@@ -9,14 +9,13 @@ GLOBAL_SETTINGS = {
     :password => "scimitar1"
   }
 }
+SETTINGS=GLOBAL_SETTINGS
 
-#if __FILE__ == $0
-#  for path in Dir.glob("packages/*")
-#    require path if File.exists? path and path =~ /rb$/
-#  end
-#  command = ARGV[0].intern
-#  the_package = lookup(ARGV[1].intern)
-#  the_package.method_missing(command)
-#end
-
-
+if __FILE__ == $0
+  for path in Dir.glob("packages/*")
+    require path if File.exists? path and path =~ /rb$/
+  end
+  command = ARGV[0].intern
+  the_package = lookup(ARGV[1].intern)
+  the_package.method_missing(command)
+end
