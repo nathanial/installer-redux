@@ -49,8 +49,8 @@ class Package
     @flags = []
     @c_flags = []
     @c_descriptions = []
-    @project_directory = "/var/development/#{name}"
-    @support = "/home/nathan/Projects/installer-redux/support/#{name}"
+    @project_directory = "#{GLOBAL_SETTINGS[:package][:directory]}/#{name}"
+    @support = "support/#{name}"
     @settings = settings
     @package_commands = {}
     @package_dependencies = []

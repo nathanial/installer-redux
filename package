@@ -3,7 +3,7 @@ require 'package'
 
 GLOBAL_SETTINGS = {
   :package => {
-    :directory => "/var/development/"
+    :directory => "/var/teledrill"
   },
   :tdsurface => {
     :password => "scimitar1"
