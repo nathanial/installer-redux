@@ -60,6 +60,14 @@ class Package
     @package_installs_service = false
     @install_script = "#@support/#{name}"
     @package_description = "None"
+    create_default_methods
+  end
+
+  def create_default_methods
+    command :install
+    command :remove
+    command :reinstall
+    command :installed?
   end
 
   def to_s
@@ -82,8 +90,6 @@ class Package
     binding
   end
 
-  private
-
   def flag(*args)
     args.each {|a| @flags << a}
   end
@@ -91,7 +97,7 @@ class Package
   def installs_service
     @package_installs_service = true
   end
-
+  
   def install_service
     return unless @package_installs_service
     script_name = (@install_script.split /\//).last
@@ -142,10 +148,10 @@ class Package
   def remove_directories
     log "removing directories for #@name"
     log "rm -rf #@project_directory"
-    rm_r @project_directory
+    rm_rf @project_directory
     @package_directories.each do |d|
       log "rm -rf #{d}"
-      rm_r d
+      rm_rf d
     end
   end
 
@@ -195,6 +201,7 @@ class Package
   end
 
   def command(name, &block)
+    raise "name cannot be null : #{name}" unless name
     c = nil
     case name
     when :install
@@ -206,12 +213,17 @@ class Package
     when :reinstall
       c = default_reinstall_command(self, &block)
     else
-      c = Command.new(self, &block)
-      c.name = name 
+      c = Command.new(self, block)
     end
+    c.name = name
     c.flags = pop_c_flags
     c.description = pop_c_description
     @package_commands[name] = c
+    (class << self; self; end).class_eval do
+      define_method name do |*args| 
+        @package_commands[name].call(self, *args)
+      end
+    end
   end
 
   def predicate(name, &block)

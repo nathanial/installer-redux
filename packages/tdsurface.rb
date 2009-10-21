@@ -1,5 +1,7 @@
 require 'package'
 require 'packages/general'
+require 'fileutils' 
+include FileUtils
 
 package :tdsurface do
   description """

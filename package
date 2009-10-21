@@ -7,7 +7,8 @@ GLOBAL_SETTINGS = {
   },
   :tdsurface => {
     :password => "scimitar1"
-  }
+  },
+  :debug => true
 }
 SETTINGS=GLOBAL_SETTINGS
 
@@ -17,5 +18,5 @@ if __FILE__ == $0
   end
   command = ARGV[0].intern
   the_package = lookup(ARGV[1].intern)
-  the_package.method_missing(command)
+  eval("the_package.#{command}")
 end

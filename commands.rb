@@ -1,7 +1,7 @@
 class Command
   attr_accessor :name, :flags, :description
 
-  def initialize(package, &action)
+  def initialize(package, action)
     @package = package
     @preconditions = []
     @postconditions = []
@@ -11,43 +11,62 @@ class Command
   end
 
   def call(*args)
+    result = nil
+    @preconditions.each do |cond|
+      result = cond.call(@package, *args)
+      return if result == :skip
+      raise "PreCondition #{cond} failed" if result == :fail
+    end
+      
     @before_advice.each {|b| b.call(@package, *args)}
-    @action.call(*args) if @action
+    begin
+      result = @action.call(*args) if @action
+    rescue => e
+      $stderr.puts "messed up #{@package.name} #@name because of #{e}"
+      exit 1 unless GLOBAL_SETTINGS[:debug]
+      raise e
+    end
     @after_advice.each {|b| b.call(@package, *args)}
+
+    @postconditions.each do |cond|
+      result = cond.call(@package, *args)
+      return if result == :skip
+      raise "PostCondition #{cond} failed" if result == :fail
+    end
+    return result
   end
   
-  def add_advice(position, &block)
+  def add_advice(position, advice)
     case position
     when :before 
-      @before_advice << block
+      @before_advice << advice
     when :after
-      @after_advice << block
+      @after_advice << advice
     else
       raise "Did not recognize position #{position} for advice"
     end
   end
 
-  def add_precondition(&condition)
+  def add_precondition(condition)
     @preconditions << condition
   end
   
-  def add_postcondition(&condition)
+  def add_postcondition(condition)
     @postconditions << condition
   end
 end
 
 #condition results = one of [:skip, :continue, :fail]
 
-class InstallPreCondition
-  def call(package, *args)
+def install_pre_condition
+  lambda do |package, *args|
     return :skip if package.installed?
     return :continue
   end
 end
 
-class InstallBeforeAdvice 
-  def call(package, *args)
-    return if package.installed?
+def install_before_advice
+  lambda do |package, *args|
     package.install_dependencies
     package.download_repositories
     package.create_directories
@@ -56,57 +75,54 @@ class InstallBeforeAdvice
   end
 end
 
-class InstallAfterAdvice
-  def call(package, *args)
+def install_after_advice
+  lambda do |package, *args|
     package.install_service
   end
 end
 
-class RemovePreCondition
-  def call(package, *args)
-    return :skip if not package.installed?
+def remove_pre_condition
+  lambda do |package, *args|
+    return :skip unless package.installed?
     return :continue
   end
 end
 
-class RemoveBeforeAdvice
-  def call(package, *args)
+def remove_before_advice
+  lambda do |package, *args|
     package.remove_directories
   end
 end
 
 def default_install_command(package, &action)
-  command = Command.new(package, &action)
-  command.add_advice(:before, InstallBeforeAdvice.new)
-  command.add_advice(:after, InstallAfterAdvice.new)
-  command.add_precondition(InstallPreCondition.new)
+  command = Command.new(package, action)
+  command.add_advice(:before, install_before_advice)
+  command.add_advice(:after, install_after_advice)
+  command.add_precondition(install_pre_condition)
   return command
 end
 
 def default_remove_command(package, &action)
-  command = Command.new(package, &action)
-  command.add_advice(:before, RemoveBeforeAdvice.new)
-  command.add_precondition(RemovePreCondition.new)
+  command = Command.new(package, action)
+  command.add_advice(:before, remove_before_advice)
+  command.add_precondition(remove_pre_condition)
   return command
 end
 
 def default_installed_predicate(package, &action)
-  command = Command.new do |*args|
-    return File.exists? package.project_directory if not action
-    return action.call(*args)
-  end
+  command = Command.new package, lambda { |*args|
+    return action.call(*args) if action
+    return File.exists? package.project_directory 
+  }
   return command
 end
 
 def default_reinstall_command(package, &action)
-  command = Command.new do |*args|
-    if action
-      return action.call(*args)
-    else
-      package.remove
-      package.install
-    end
-  end
+  command = Command.new package, lambda { |*args|
+    return action.call(*args) if action
+    package.remove
+    package.install
+  }
   return command
 end
     
