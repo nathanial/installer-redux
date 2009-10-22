@@ -12,7 +12,8 @@ $packages = {}
 def lookup(name)  
   p = $packages[name]
   if not p
-    raise "could not find package named #{name} out of #{$packages}"
+    $stderr.puts "could not find package named #{name}"
+    exit 1
   else 
     p
   end
@@ -88,10 +89,6 @@ class Package
 
   def get_binding 
     binding
-  end
-
-  def flag(*args)
-    args.each {|a| @flags << a}
   end
 
   def installs_service
@@ -180,22 +177,6 @@ class Package
     @package_repository = args
   end
 
-  def c_flag(*args)
-    @c_flags << args
-  end
-
-  def pop_c_flags 
-    @c_flags.pop unless @c_flags.empty?
-  end
-  
-  def c_description(desc)
-    @c_descriptions << desc
-  end
-
-  def pop_c_description 
-    @c_descriptions.pop unless @c_descriptions.empty?
-  end
-
   def description(desc)
     @package_description = desc
   end
@@ -216,8 +197,6 @@ class Package
       c = Command.new(self, block)
     end
     c.name = name
-    c.flags = pop_c_flags
-    c.description = pop_c_description
     @package_commands[name] = c
     (class << self; self; end).class_eval do
       define_method name do |*args| 
@@ -226,10 +205,6 @@ class Package
     end
   end
 
-  def predicate(name, &block)
-    @package_commands[name] = block
-  end
-  
   def downloads(options)
     @package_downloads << options
   end
@@ -252,14 +227,14 @@ def apt_package(*args)
   end
 
   package name do
-    flag :apt_package
+    @flags << :apt_package
     command :install do
       sh("aptitude -y install #{apt_name}")
     end
     command :remove do 
       sh("aptitude -y remove #{apt_name}")
     end
-    predicate :installed? do
+    command :installed? do
       log "checking if #{name} is installed"
       installed = $installed_deb_packages.reject {|r| not r =~ /^ii/ or not r =~ / #{apt_name} /}
       not installed.empty?
@@ -273,14 +248,14 @@ def gem_package(*args)
     gem_name = args.shift
   end
   package name do
-    flag :gem_package
+    @flags << :gem_package
     command :install do
       sh("gem install #{gem_name}")
     end
     command :remove do
       sh("gem remove #{gem_name}")
     end
-    predicate :installed? do
+    command :installed? do
       false
     end
   end
@@ -288,7 +263,7 @@ end
 
 def py_package(name, options)
   package name do
-    flag :py_package
+    @flags << :py_package
     depends_on :python
     depends_on(*options[:dependencies])
     downloads :url => options[:url], :extract => options[:tarball], :to => @project_directory

@@ -6,16 +6,17 @@ require 'parseconfig'
 config = ParseConfig.new("./settings.conf")
 SETTINGS=config.params
 
-
 if __FILE__ == $0
   for path in Dir.glob("packages/*")
     require path if File.exists? path and path =~ /rb$/
   end
   command = ARGV[0].intern
   args = ARGV[1..ARGV.count-2]
-  args = args.map {|a| "'#{a}'"}.join(',')
-  puts "args = #{args}"
   the_package = lookup(ARGV.last.intern)
-  puts "the_package.#{command}(#{args})"
-  eval("the_package.#{command}(#{args})")
+  unless the_package.package_commands.include? command
+    $stderr.puts "no command named #{command} for #{the_package.name}"
+    exit 1
+  else
+    the_package.package_commands[command].call(*args)
+  end
 end
