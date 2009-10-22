@@ -1,3 +1,13 @@
+
+module Commands
+  def without_advice
+    old_value = SETTINGS['global']['advise_commands']
+    SETTINGS['global']['advise_commands'] = false
+    yield 
+    SETTINGS['global']['advise_commands'] = old_value
+  end
+end
+
 class Command
   attr_accessor :name, :flags, :description
 
@@ -12,21 +22,21 @@ class Command
 
   def call(*args)
     result = nil
+    advise = SETTINGS['global']['advise_commands']
     @preconditions.each do |cond|
       result = cond.call(@package, *args)
       return if result == :skip
       raise "PreCondition #{cond} failed" if result == :fail
     end
-      
-    @before_advice.each {|b| b.call(@package, *args)}
+    @before_advice.each {|b| b.call(@package, *args)} if advise
     begin
       result = @action.call(*args) if @action
     rescue => e
       $stderr.puts "messed up #{@package.name} #@name because of #{e}"
-      exit 1 unless GLOBAL_SETTINGS[:debug]
+      exit 1 unless SETTINGS['global']['debug']
       raise e
     end
-    @after_advice.each {|b| b.call(@package, *args)}
+    @after_advice.each {|b| b.call(@package, *args)} if advise
 
     @postconditions.each do |cond|
       result = cond.call(@package, *args)

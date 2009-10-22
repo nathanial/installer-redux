@@ -30,7 +30,7 @@ gem_package :http_client_gem, "httpclient"
 gem_package :openssl_nonblock_gem, "openssl-nonblock"
 
 package :python do
-  predicate :installed? do
+  command :installed? do
     some([:python25, :python26], lambda {|p| lookup(p).installed?})
   end
   command :install do

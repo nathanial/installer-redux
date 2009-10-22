@@ -1,13 +1,10 @@
 require 'package'
+require 'commands'
 require 'packages/general'
 require 'fileutils' 
 include FileUtils
 
 package :tdsurface do
-  description """
-the most important package of them all; webapp the does it all;
-controls tool, gathers pason and mwd data...
-"""
   depends_on :mysql_server, :apache2, :svn, :git, :django, :expect
   depends_on :python_tz, :matplotlib, :mod_python, :python_mysqldb
   depends_on :pisa, :report_lab, :python_html5lib, :pypdf, :python_imaging
@@ -17,7 +14,7 @@ controls tool, gathers pason and mwd data...
   repository :git, "git@github.com:teledrill/tdsurface.git"
 
   python_site_packages = `python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()"`.chomp
-  password = @settings[:tdsurface][:password]
+  password = @settings['tdsurface']['password']
   
   command :install do
     install_project_files
@@ -76,7 +73,7 @@ GRANT ALL PRIVILEGES ON *.* TO 'tdsurface'@'localhost';\"
 
   command :redeploy_from do |directory|
     remove
-    install
+    sh("cp -r #{directory} #@project_directory")
     sh("cd #@project_directory && DJANGO_SETTINGS_MODULE=\"settings\" python -c 'from django.contrib.sessions.models import Session; Session.objects.all().delete()'")
   end
 end    

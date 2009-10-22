@@ -2,4 +2,5 @@
 
 aptitude -y install ruby rubygems irb libopenssl-ruby sysvconfig librexml-ruby
 gem install httpclient
+gem install parseconfig
 rm -f /usr/local/bin/package

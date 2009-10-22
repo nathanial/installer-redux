@@ -49,7 +49,7 @@ class Package
     @flags = []
     @c_flags = []
     @c_descriptions = []
-    @project_directory = "#{GLOBAL_SETTINGS[:package][:directory]}/#{name}"
+    @project_directory = "#{settings['global']['directory']}/#{name}"
     @support = "support/#{name}"
     @settings = settings
     @package_commands = {}
@@ -221,7 +221,7 @@ class Package
     @package_commands[name] = c
     (class << self; self; end).class_eval do
       define_method name do |*args| 
-        @package_commands[name].call(self, *args)
+        @package_commands[name].call(*args)
       end
     end
   end
@@ -237,7 +237,7 @@ class Package
 end
 
 def package(name, &block)
-  package = Package.new(name, GLOBAL_SETTINGS)
+  package = Package.new(name, SETTINGS)
   package.instance_eval(&block)
   $packages[name] = package
 end

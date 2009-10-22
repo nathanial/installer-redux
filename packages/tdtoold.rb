@@ -5,9 +5,6 @@ include Logging
 package :tdtoold do
   depends_on :python, :git, :python_serial
   repository :git, "git@github.com:teledrill/tdtoold.git"
-  description """
-Teledrill Tool Daemon
-"""
 
   command :install do
     sh("cd #@project_directory && python setup.py install --install-scripts=/usr/local/bin")

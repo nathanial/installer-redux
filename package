@@ -1,22 +1,21 @@
 #!/usr/bin/ruby
+require 'rubygems'
 require 'package'
+require 'parseconfig'
 
-GLOBAL_SETTINGS = {
-  :package => {
-    :directory => "/var/teledrill"
-  },
-  :tdsurface => {
-    :password => "scimitar1"
-  },
-  :debug => true
-}
-SETTINGS=GLOBAL_SETTINGS
+config = ParseConfig.new("./settings.conf")
+SETTINGS=config.params
+
 
 if __FILE__ == $0
   for path in Dir.glob("packages/*")
     require path if File.exists? path and path =~ /rb$/
   end
   command = ARGV[0].intern
-  the_package = lookup(ARGV[1].intern)
-  eval("the_package.#{command}")
+  args = ARGV[1..ARGV.count-2]
+  args = args.map {|a| "'#{a}'"}.join(',')
+  puts "args = #{args}"
+  the_package = lookup(ARGV.last.intern)
+  puts "the_package.#{command}(#{args})"
+  eval("the_package.#{command}(#{args})")
 end
