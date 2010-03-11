@@ -25,6 +25,9 @@ apt_package :python_html5lib, "python-html5lib"
 apt_package :python_imaging, "python-imaging"
 apt_package :python_dev, "python-all-dev"
 apt_package :sysvconfig
+apt_package :geany
+apt_package :mysql_admin, "mysql-admin"
+apt_package :django, "python-django"
 
 gem_package :http_client_gem, "httpclient"
 gem_package :openssl_nonblock_gem, "openssl-nonblock"

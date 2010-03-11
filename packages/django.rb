@@ -3,7 +3,7 @@ include FileUtils
 
 python_site_packages = `python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()"`.chomp
 
-package :django do
+package :django_svn do
   depends_on :python, :svn
   repository :svn, "http://code.djangoproject.com/svn/django/trunk/"
   
