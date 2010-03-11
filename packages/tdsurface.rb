@@ -37,7 +37,7 @@ package :tdsurface do
   command :install_project_files do
     cp "#@support/django_local_settings.py", "#@project_directory/settings_local.py"
     chown("root", "www-data", ["/var/log/tdsurface"])
-    cp_r "#{python_site_packages}/django/contrib/admin/media", "/var/www/media"
+    cp_r "/usr/lib/pymodules/python2.6/django/contrib/admin/media", "/var/www/media"
     cp_r "#@project_directory/media", "/var/www/"
     cp "#@support/tdsurface_apache.conf", '/etc/apache2/conf.d/tdsurface'
     chmod_R(0777, ["/var/matplotlib", "/var/log/tdsurface"])
@@ -72,8 +72,9 @@ GRANT ALL PRIVILEGES ON *.* TO 'tdsurface'@'localhost';\"
   end
 
   command :redeploy_from do |directory|
-    remove
+    sh_f("service apache2 stop")
     sh("cp -r #{directory} #@project_directory")
     sh("cd #@project_directory && DJANGO_SETTINGS_MODULE=\"settings\" python -c 'from django.contrib.sessions.models import Session; Session.objects.all().delete()'")
+    sh_f("service apache2 start")
   end
 end    
