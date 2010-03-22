@@ -10,12 +10,18 @@ package :tdtoold do
     sh("cd #@project_directory && python setup.py install --install-scripts=/usr/local/bin")
     touch "/var/log/tdtoold.log"
     sh("chmod a+rw /var/log/tdtoold.log")
+    sh("update-rc.d tdtoold defaults")
   end
 
   command :refresh do
     sh("cd #@project_directory && python setup.py install --install-scripts=/usr/local/bin")
     touch "/var/log/tdtoold.log"
     sh("chmod a+rw /var/log/tdtoold.log")
+    sh("update-rc.d tdtoold defaults")
+  end
+
+  command :remove do 
+    sh("update-rc.d -f tdtoold remove")
   end
 end
 
